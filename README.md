@@ -2,7 +2,7 @@
 ## Purpose
 A set of tools to find, analyze & visualize hairpin RNAs (hpRNAs)
 ## hpSource.py
-Finds hairpin RNAs in a genome and generates gff annotation.
+Finds hairpin RNAs in a genome and generates annotation file in bed format.
 
 Written in python3.  
 
