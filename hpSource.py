@@ -107,12 +107,13 @@ def einvertedParse(results):
 	RightEnds=[]
 	print("Parsing einverted output file: "+results)
 	chrom=''
-	LeftArm=True
-	hpCount=1
+	linecount=0
+	hpCount=0
 	for line in open(results,"r"):
-		if line.startswith("         "):
-			LeftArm=False
-		elif re.search("\:",line):
+		linecount+=1
+		if linecount==1:
+			hpCount+=1
+		elif linecount==2:
 			score=int(line.split(" Score ")[1].split(":")[0])
 			Scores.append(score)
 			if chrom==line.split(":")[0]:
@@ -124,27 +125,20 @@ def einvertedParse(results):
 				hpCount=1
 				Locations.append(chrom)
 				Names.append(chrom+"_hpRNA"+str(hpCount))
-			LeftArm=True
-		elif line.startswith("   "):
-			print(line)
+		elif linecount==3:
 			temp=line.strip("   ").split(" ")
-			if LeftArm==True:
-				start=int(temp[0])
-				LeftStarts.append(start)
-				end=int(temp[2])
-				LeftEnds.append(end)
-			elif LeftArm==False:
-				start=int(temp[2])
-				RightStarts.append(start)
-				end=int(temp[0])
-				RightEnds.append(end)
-	print(str(len(Locations))+" locations found")
-	print(str(len(Names))+" names found")
-	print(str(len(Scores))+" scores found")
-	print(str(len(LeftStarts))+" left starts found")
-	print(str(len(LeftEnds))+" left ends found")
-	print(str(len(RightStarts))+" right starts found")
-	print(str(len(RightEnds))+" right ends found")
+			start=int(temp[0])
+			LeftStarts.append(start)
+			end=int(temp[2])
+			LeftEnds.append(end)	
+		elif linecount==4:
+			None
+		elif linecount==5:	
+			start=int(temp[2])
+			RightStarts.append(start)
+			end=int(temp[0])
+			RightEnds.append(end)
+			linecount=0
 	BedOutput=""
 	for i in range(len(Locations)):
 		BedOutput+=Locations[i]+"\t"+str(LeftStarts[i])+"\t"+str(LeftEnds[i])+"\t"+Names[i]+"_left\t"+str(Scores[i])+"\n"+Locations[i]+"\t"+str(RightStarts[i])+"\t"+str(RightEnds[i])+"\t"+Names[i]+"_right\t"+str(Scores[i])+"\n"
