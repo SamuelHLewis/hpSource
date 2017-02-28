@@ -194,7 +194,9 @@ def einvertedParse(results,reversecomp=False):
 	output = open(results.replace(".out",".bed"),"wt")
 	output.write(BedOutput)
 	output.close()
-	print("Bed file of hpRNAs written to "+results.replace(".out",".bed"))
+	cmd="cat "+results.replace(".out",".bed")+" >> premapping.bed"
+	subprocess.call(cmd,shell=True)
+	print("Bed file of hpRNAs written to "+results.replace(".out",".bed")+" and concatenated to premapping.bed")
 	return()
 
 # function to map sRNAs to a genome
