@@ -91,10 +91,32 @@ def revseqRun(genome):
 # function to run einverted
 def einvertedRun(genome):
 	print("Finding secondary structure in "+genome) 
-	cmd="einverted -sequence "+genome+" -gap "+str(EinvGap)+" -threshold "+str(EinvThreshold)+" -match "+str(EinvMatch)+" -mismatch "+str(EinvMismatch)+" -outfile "+genome.replace(".fasta",".out")+" -outseq "+genome.replace(".fasta","_einverted.fasta")
+	cmd="einverted -sequence "+genome+" -gap "+str(EinvGap)+" -threshold "+str(EinvMatch*2)+" -match "+str(EinvMatch)+" -mismatch "+str(EinvMismatch)+" -outfile "+genome.replace(".fasta",".out")+" -outseq "+genome.replace(".fasta","_einverted.fasta")
 	subprocess.call(cmd,shell=True)
 	print("Output of einverted written to "+genome.replace(".fasta",".out")+" & "+genome.replace(".fasta","_einverted.fasta"))
 	return(genome.replace(".fasta",".out"))
+
+# function to calculate score of hairpin, taking into account G:U bases
+def einvertedScore(left,right):
+	ScoreDict={
+	"a":["t"],
+	"c":["g"],
+	"g":["c","t"],
+	"t":["a","g"],
+	"-":["-"]
+	}
+	if len(left)!=len(right):
+		print("ERROR: hairpin arms are different lengths")
+		sys.exit(0)
+	match=0
+	mismatch=0
+	for base in range(len(left)):
+		if right[base] in ScoreDict[left[base]]:
+			match+=1
+		else:
+			mismatch+=1
+	score=(match*EinvMatch)+(mismatch*EinvMismatch)
+	return(score)
 
 # function to convert einverted output to gff
 def einvertedParse(results):
@@ -106,38 +128,44 @@ def einvertedParse(results):
 	RightStarts=[]
 	RightEnds=[]
 	print("Parsing einverted output file: "+results)
-	chrom=''
 	linecount=0
 	hpCount=0
+	chrom=""
+	leftarm=""
+	rightarm=""
 	for line in open(results,"r"):
 		linecount+=1
 		if linecount==1:
 			hpCount+=1
 		elif linecount==2:
-			score=int(line.split(" Score ")[1].split(":")[0])
-			Scores.append(score)
 			if chrom==line.split(":")[0]:
 				hpCount+=1
-				Locations.append(chrom)
-				Names.append(chrom+"_hpRNA"+str(hpCount))
 			else:
 				chrom=line.split(":")[0]
 				hpCount=1
-				Locations.append(chrom)
-				Names.append(chrom+"_hpRNA"+str(hpCount))
 		elif linecount==3:
 			temp=line.strip("   ").split(" ")
-			start=int(temp[0])
-			LeftStarts.append(start)
-			end=int(temp[2])
-			LeftEnds.append(end)	
+			leftstart=int(temp[0])
+			leftend=int(temp[2])
+			leftarm=temp[1]
 		elif linecount==4:
 			None
-		elif linecount==5:	
-			start=int(temp[2])
-			RightStarts.append(start)
-			end=int(temp[0])
-			RightEnds.append(end)
+		elif linecount==5:
+			temp=line.strip("   ").split(" ")	
+			rightstart=int(temp[2])
+			rightend=int(temp[0])
+			rightarm=temp[1]
+			score=einvertedScore(left=leftarm,right=rightarm)
+			if score>=EinvThreshold:
+				Scores.append(score)
+				Locations.append(chrom)
+				Names.append(chrom+"_hpRNA"+str(hpCount))
+				LeftStarts.append(leftstart)
+				LeftEnds.append(leftend)
+				RightStarts.append(rightstart)
+				RightEnds.append(rightend)
+			else:
+				None	
 			linecount=0
 	BedOutput=""
 	for i in range(len(Locations)):
@@ -193,3 +221,4 @@ def hpRNAfind(input):
 
 hpRNAfind(input=InputGenome)
 #sRNAmap(srna=InputsRNA,genome=InputGenome)
+#einvertedScore(left="tctt",right="aaaa")
