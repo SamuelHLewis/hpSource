@@ -8,23 +8,29 @@ Written in python3.
 
 Dependencies:
 
+[biopython](https://github.com/biopython/biopython.github.io/)
+
 [einverted](http://emboss.bioinformatics.nl/cgi-bin/emboss/help/einverted)
+
+[revseq](http://www.bioinformatics.nl/cgi-bin/emboss/help/revseq)
 
 Basic usage is:
 ```bash
-hpSource.py -i input.fas
+hpSource.py -g input.fas -s sRNA.fastq
 ```
-hpSource takes one mandatory argument:
+hpSource takes two mandatory arguments:
 
-	-i (input fasta file)
+	-g (input genome fasta file)
+
+	-s (input small RNA fastq file)
 
 hpSource takes four optional arguments:
 
-	-g (gap penalty for einverted, default=12)
+	-p (gap penalty for einverted, default=12)
 
 	-t (minimum score threshold for einverted, default=50)
 
 	-m (match score for einverted, default=3)
 
-	-s (mismatch score for einverted, default=-4)
+	-a (mismatch score for einverted, default=-4)
 
