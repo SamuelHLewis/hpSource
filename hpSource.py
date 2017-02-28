@@ -5,6 +5,7 @@ import subprocess
 import sys
 import os
 import re
+from Bio import SeqIO
 
 # argument parsing
 parser=argparse.ArgumentParser(description="Read arguments")
@@ -119,7 +120,7 @@ def einvertedScore(left,right):
 	return(score)
 
 # function to convert einverted output to gff
-def einvertedParse(results):
+def einvertedParse(results,reversecomp=False):
 	Locations=[]
 	Names=[]
 	Scores=[]
@@ -127,6 +128,12 @@ def einvertedParse(results):
 	LeftEnds=[]
 	RightStarts=[]
 	RightEnds=[]
+	# if parsing results from the reverse complement, need to log the total length of each chromosome to convert coordinates back to original (i.e. forward strand) orientation
+	if reversecomp:
+		CorrectionFactors={}
+		for chromosome in SeqIO.parse(InputGenome,"fasta"):
+			CorrectionFactors[chromosome.id]=len(chromosome)
+			print("Chromosome "+chromosome.id+" is "+str(len(chromosome))+" nt long")
 	print("Parsing einverted output file: "+results)
 	linecount=0
 	hpCount=0
@@ -145,15 +152,25 @@ def einvertedParse(results):
 				hpCount=1
 		elif linecount==3:
 			temp=line.strip("   ").split(" ")
-			leftstart=int(temp[0])
-			leftend=int(temp[2])
+			# if parsing the reverse complement, convert the left start and end coordinates back to the forward orientation
+			if reversecomp:
+				leftstart=CorrectionFactors[chrom]-int(temp[0])
+				leftend=CorrectionFactors[chrom]-int(temp[2])
+			else:
+				leftstart=int(temp[0])
+				leftend=int(temp[2])
 			leftarm=temp[1]
 		elif linecount==4:
 			None
 		elif linecount==5:
 			temp=line.strip("   ").split(" ")	
-			rightstart=int(temp[2])
-			rightend=int(temp[0])
+			# if parsing the reverse complement, convert the right start and end coordinates back to the forward orientation
+			if reversecomp:
+				rightstart=CorrectionFactors[chrom]-int(temp[2])
+				rightend=CorrectionFactors[chrom]-int(temp[0])
+			else:
+				rightstart=int(temp[2])
+				rightend=int(temp[0])
 			rightarm=temp[1]
 			score=einvertedScore(left=leftarm,right=rightarm)
 			if score>=EinvThreshold:
@@ -168,8 +185,12 @@ def einvertedParse(results):
 				None	
 			linecount=0
 	BedOutput=""
-	for i in range(len(Locations)):
-		BedOutput+=Locations[i]+"\t"+str(LeftStarts[i])+"\t"+str(LeftEnds[i])+"\t"+Names[i]+"_left\t"+str(Scores[i])+"\n"+Locations[i]+"\t"+str(RightStarts[i])+"\t"+str(RightEnds[i])+"\t"+Names[i]+"_right\t"+str(Scores[i])+"\n"
+	if reversecomp:
+		for i in range(len(Locations)):
+			BedOutput+=Locations[i]+"\t"+str(LeftStarts[i])+"\t"+str(LeftEnds[i])+"\t"+Names[i]+"_left\t"+str(Scores[i])+"\t-\n"+Locations[i]+"\t"+str(RightStarts[i])+"\t"+str(RightEnds[i])+"\t"+Names[i]+"_right\t"+str(Scores[i])+"\t-\n"
+	else:
+		for i in range(len(Locations)):
+			BedOutput+=Locations[i]+"\t"+str(LeftStarts[i])+"\t"+str(LeftEnds[i])+"\t"+Names[i]+"_left\t"+str(Scores[i])+"\t+\n"+Locations[i]+"\t"+str(RightStarts[i])+"\t"+str(RightEnds[i])+"\t"+Names[i]+"_right\t"+str(Scores[i])+"\t+\n"
 	output = open(results.replace(".out",".bed"),"wt")
 	output.write(BedOutput)
 	output.close()
@@ -216,9 +237,9 @@ def hpRNAfind(input):
 	einvertedResults=einvertedRun(genome=input)
 	einvertedParse(results=einvertedResults)
 	einvertedResultsRC=einvertedRun(genome=inputRC)
-	einvertedParse(results=einvertedResultsRC)	
+	einvertedParse(results=einvertedResultsRC,reversecomp=True)	
 	return("hpRNA analysis complete for "+input)
 
 hpRNAfind(input=InputGenome)
-#sRNAmap(srna=InputsRNA,genome=InputGenome)
-#einvertedScore(left="tctt",right="aaaa")
+
+
