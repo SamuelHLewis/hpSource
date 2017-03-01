@@ -5,6 +5,7 @@ import subprocess
 import sys
 import os
 import re
+import shutil
 from Bio import SeqIO
 
 # argument parsing
@@ -233,16 +234,31 @@ def sRNAmap(srna,genome):
 	os.remove("MappedR.sam")
 	return()
 
+# function to count reads mapping to each feature in a gff in a strand-specific manner
+def ReadCounter(bed,bam):
+	print("Counting reads in "+bam+" overlapping features in "+bed)
+	CountFile=bed.strip(".bed")+"_"+bam.strip(".bam")+".counts"
+	cmd="bedtools coverage -s -c -a "+bed+" -b "+bam+" > "+CountFile
+	subprocess.call(cmd,shell=True)
+	print("Read counts written to "+CountFile)
+	return(CountFile)
+
 # master function to: run einverted
 def hpRNAfind(input):
+	if os.path.isdir("hpSource") is True:
+		shutil.rmtree("hpSource")
+		print("Old hpSource output files removed")
+	os.makedirs("hpSource")
+#	os.chdir("hpSource")	
 	inputRC=revseqRun(genome=input)
 	einvertedResults=einvertedRun(genome=input)
 	einvertedParse(results=einvertedResults)
 	einvertedResultsRC=einvertedRun(genome=inputRC)
-	einvertedParse(results=einvertedResultsRC,reversecomp=True)	
+	einvertedParse(results=einvertedResultsRC,reversecomp=True)
+	sRNAmap(srna=InputsRNA,genome=InputGenome)
+	Fcounts=ReadCounter(bed="premapping.bed",bam="MappedF.bam")
+	Rcounts=ReadCounter(bed="premapping.bed",bam="MappedR.bam")
 	return("hpRNA analysis complete for "+input)
 
 hpRNAfind(input=InputGenome)
-
-sRNAmap(srna=InputsRNA,genome=InputGenome)
 
