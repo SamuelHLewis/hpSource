@@ -93,10 +93,10 @@ def revseqRun(genome):
 # function to run einverted
 def einvertedRun(genome):
 	print("Finding secondary structure in "+genome) 
-	cmd="einverted -sequence "+genome+" -gap "+str(EinvGap)+" -threshold "+str(EinvMatch*2)+" -match "+str(EinvMatch)+" -mismatch "+str(EinvMismatch)+" -outfile "+genome.replace(".fasta",".out")+" -outseq "+genome.replace(".fasta","_einverted.fasta")
+	cmd="einverted -sequence "+genome+" -gap "+str(EinvGap)+" -threshold "+str(EinvMatch*2)+" -match "+str(EinvMatch)+" -mismatch "+str(EinvMismatch)+" -outfile ./hpSource/"+genome.replace(".fasta",".out")+" -outseq ./hpSource/"+genome.replace(".fasta","_einverted.fasta")
 	subprocess.call(cmd,shell=True)
-	print("Output of einverted written to "+genome.replace(".fasta",".out")+" & "+genome.replace(".fasta","_einverted.fasta"))
-	return(genome.replace(".fasta",".out"))
+	print("Output of einverted written to ./hpSource/"+genome.replace(".fasta",".out")+" & ./hpSource/"+genome.replace(".fasta","_einverted.fasta"))
+	return("./hpSource/"+genome.replace(".fasta",".out"))
 
 # function to calculate score of hairpin, taking into account G:U bases
 def einvertedScore(left,right):
@@ -195,9 +195,9 @@ def einvertedParse(results,reversecomp=False):
 	output = open(results.replace(".out",".bed"),"wt")
 	output.write(BedOutput)
 	output.close()
-	cmd="cat "+results.replace(".out",".bed")+" >> premapping.bed"
+	cmd="cat "+results.replace(".out",".bed")+" >> ./hpSource/premapping.bed"
 	subprocess.call(cmd,shell=True)
-	print("Bed file of hpRNAs written to "+results.replace(".out",".bed")+" and concatenated to premapping.bed")
+	print("Bed file of hpRNAs written to "+results.replace(".out",".bed")+" and concatenated to ./hpSource/premapping.bed")
 	return()
 
 # function to map sRNAs to a genome
@@ -210,38 +210,38 @@ def sRNAmap(srna,genome):
 		srna=srna.replace(".gz","")
 	# make bowtie2 database for input genome
 	print("Making bowtie2 database for genome "+genome)
-	cmd="bowtie2-build "+genome+" ./"+genome.replace(".fasta","")
+	cmd="bowtie2-build "+genome+" ./hpSource/"+genome.replace(".fasta","")
 	subprocess.call(cmd,shell=True)
 	# map reads to forward strand
 	print("Mapping "+srna+" to forward strand of "+genome)
-	cmd="bowtie2 --fast --norc -q -x "+genome.replace(".fasta","")+" -U "+srna+" -S MappedF.sam"
+	cmd="bowtie2 --fast --norc -q -x ./hpSource/"+genome.replace(".fasta","")+" -U "+srna+" -S ./hpSource/MappedF.sam"
 	subprocess.call(cmd,shell=True)
 	print("Reads mapped")
 	print("Converting SAM to BAM")
-	cmd="samtools view -bS -u MappedF.sam > MappedF.bam"
+	cmd="samtools view -bS -u ./hpSource/MappedF.sam > ./hpSource/MappedF.bam"
 	subprocess.call(cmd,shell=True)
 	print("SAM converted to BAM")
-	os.remove("MappedF.sam")
+	os.remove("./hpSource/MappedF.sam")
 	# map reads to reverse strand
 	print("Mapping "+srna+" to reverse strand of "+genome)
-	cmd="bowtie2 --fast --nofw -q -x "+genome.replace(".fasta","")+" -U "+srna+" -S MappedR.sam"
+	cmd="bowtie2 --fast --nofw -q -x ./hpSource/"+genome.replace(".fasta","")+" -U "+srna+" -S ./hpSource/MappedR.sam"
 	subprocess.call(cmd,shell=True)
 	print("Reads mapped")
 	print("Converting SAM to BAM")
-	cmd="samtools view -bS -u MappedR.sam > MappedR.bam"
+	cmd="samtools view -bS -u ./hpSource/MappedR.sam > ./hpSource/MappedR.bam"
 	subprocess.call(cmd,shell=True)
 	print("SAM converted to BAM")
-	os.remove("MappedR.sam")
+	os.remove("./hpSource/MappedR.sam")
 	return()
 
 # function to count reads mapping to each feature in a gff in a strand-specific manner
-def ReadCounter(bed,bam):
+def CoverageCalculator(bed,bam):
 	print("Counting reads in "+bam+" overlapping features in "+bed)
-	CountFile=bed.strip(".bed")+"_"+bam.strip(".bam")+".counts"
-	cmd="bedtools coverage -s -c -a "+bed+" -b "+bam+" > "+CountFile
+	CoverageFile="./hpSource/"+bed.split("/")[-1].strip(".bed")+"_"+bam.split("/")[-1].strip(".bam")+".counts"
+	cmd="bedtools coverage -s -c -a "+bed+" -b "+bam+" > "+CoverageFile
 	subprocess.call(cmd,shell=True)
-	print("Read counts written to "+CountFile)
-	return(CountFile)
+	print("Coverage written to "+CoverageFile)
+	return(CoverageFile)
 
 # master function to: run einverted
 def hpRNAfind(input):
@@ -256,8 +256,8 @@ def hpRNAfind(input):
 	einvertedResultsRC=einvertedRun(genome=inputRC)
 	einvertedParse(results=einvertedResultsRC,reversecomp=True)
 	sRNAmap(srna=InputsRNA,genome=InputGenome)
-	Fcounts=ReadCounter(bed="premapping.bed",bam="MappedF.bam")
-	Rcounts=ReadCounter(bed="premapping.bed",bam="MappedR.bam")
+	Fcounts=CoverageCalculator(bed="./hpSource/premapping.bed",bam="./hpSource/MappedF.bam")
+	Rcounts=CoverageCalculator(bed="./hpSource/premapping.bed",bam="./hpSource/MappedR.bam")
 	return("hpRNA analysis complete for "+input)
 
 hpRNAfind(input=InputGenome)
