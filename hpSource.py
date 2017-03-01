@@ -243,13 +243,52 @@ def CoverageCalculator(bed,bam):
 	print("Coverage written to "+CoverageFile)
 	return(CoverageFile)
 
-# master function to: run einverted
+def CoverageScreener(forward,reverse):
+	print("Screening hpRNAs based on coverage")
+	InputLines=[]
+	CandidatesF=[]
+	CountsF=[]
+	CandidatesR=[]
+	CountsR=[]
+	ValidatedLines=[]
+	for line in open(forward,"r"):
+		InputLines.append(line.strip("\n"))
+		CandidatesF.append(line.split("\t")[3])
+		CountsF.append(int(line.split("\t")[-1]))
+	for line in open(reverse,"r"):
+		CandidatesR.append(line.split("\t")[3])
+		CountsR.append(int(line.split("\t")[-1]))
+	for i in range(len(CandidatesF)):
+		if CandidatesF[i]!=CandidatesR[i]:
+			print("ERROR: clash of names when parsing forward and reverse counts")
+			sys.exit(0)
+		else:
+			if CountsF[i]>CountsR[i]:
+				CoverageProp=CountsF[i]/(CountsF[i]+CountsR[i])
+			elif CountsR[i]>CountsF[i]:
+				CoverageProp=CountsR[i]/(CountsR[i]+CountsF[i])
+			else:
+				CoverageProp=0.5
+			print("Dominant strand coverage for "+CandidatesF[i]+" = "+str(CoverageProp))
+			if CoverageProp>0.8:
+				ValidatedLines.append(InputLines[i])
+				print(CandidatesF[i]+" passes validation")
+	ValidatedBed=''
+	for i in ValidatedLines:
+		temp=i.split("\t")
+		ValidatedBed+=temp[0]+"\t"+temp[1]+"\t"+temp[2]+"\t"+temp[3]+"\t"+temp[4]+"\t"+temp[5]+"\n"
+	output=open("./hpSource/postmapping.bed","wt")
+	output.write(ValidatedBed)
+	output.close()
+	print("Coverage-screened hpRNA annotations written to ./hpSource/postmapping.bed")
+	return()
+
+# master function to find hpRNAs
 def hpRNAfind(input):
 	if os.path.isdir("hpSource") is True:
 		shutil.rmtree("hpSource")
 		print("Old hpSource output files removed")
 	os.makedirs("hpSource")
-#	os.chdir("hpSource")	
 	inputRC=revseqRun(genome=input)
 	einvertedResults=einvertedRun(genome=input)
 	einvertedParse(results=einvertedResults)
@@ -258,7 +297,9 @@ def hpRNAfind(input):
 	sRNAmap(srna=InputsRNA,genome=InputGenome)
 	Fcounts=CoverageCalculator(bed="./hpSource/premapping.bed",bam="./hpSource/MappedF.bam")
 	Rcounts=CoverageCalculator(bed="./hpSource/premapping.bed",bam="./hpSource/MappedR.bam")
+	CoverageScreener(forward=Fcounts,reverse=Rcounts)
 	return("hpRNA analysis complete for "+input)
 
 hpRNAfind(input=InputGenome)
+
 
