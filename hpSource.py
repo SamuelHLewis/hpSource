@@ -92,7 +92,8 @@ def revseqRun(genome):
 
 # function to run einverted
 def einvertedRun(genome):
-	print("Finding secondary structure in "+genome) 
+	print("Finding secondary structure in "+genome)
+	# NB: initial run is done with very low threshold (minimum 2 adjacent basepairs) because these scores will be modified later to account for G:U wobble pairs, so want to be as permissive as possible at this stage
 	cmd="einverted -sequence "+genome+" -gap "+str(EinvGap)+" -threshold "+str(EinvMatch*2)+" -match "+str(EinvMatch)+" -mismatch "+str(EinvMismatch)+" -outfile ./hpSource/"+genome.replace(".fasta",".out")+" -outseq ./hpSource/"+genome.replace(".fasta","_einverted.fasta")
 	subprocess.call(cmd,shell=True)
 	print("Output of einverted written to ./hpSource/"+genome.replace(".fasta",".out")+" & ./hpSource/"+genome.replace(".fasta","_einverted.fasta"))
@@ -100,6 +101,7 @@ def einvertedRun(genome):
 
 # function to calculate score of hairpin, taking into account G:U bases
 def einvertedScore(left,right):
+	# NB: "g" can pair with "c" or "t", and "t" can pair with "a" or "g", which takes wobble pairs into account
 	ScoreDict={
 	"a":["t"],
 	"c":["g"],
@@ -110,6 +112,7 @@ def einvertedScore(left,right):
 	if len(left)!=len(right):
 		print("ERROR: hairpin arms are different lengths")
 		sys.exit(0)
+	# calculate score for hpRNA based on the match score and mismatch penalty
 	match=0
 	mismatch=0
 	for base in range(len(left)):
@@ -173,7 +176,9 @@ def einvertedParse(results,reversecomp=False):
 				rightstart=int(temp[2])
 				rightend=int(temp[0])
 			rightarm=temp[1]
+			# calculate the score for this hpRNA using the custom scorer, which takes into account G:U wobble pairs
 			score=einvertedScore(left=leftarm,right=rightarm)
+			# only log the details of the hpRNA if it passes the threshold
 			if score>=EinvThreshold:
 				Scores.append(score)
 				Locations.append(chrom)
@@ -185,6 +190,7 @@ def einvertedParse(results,reversecomp=False):
 			else:
 				None	
 			linecount=0
+	# output all annotations passing the score threshold in bed format (column order = Chromosome,Start,Stop,Name,Score,Strand)
 	BedOutput=""
 	if reversecomp:
 		for i in range(len(Locations)):
@@ -195,6 +201,7 @@ def einvertedParse(results,reversecomp=False):
 	output = open(results.replace(".out",".bed"),"wt")
 	output.write(BedOutput)
 	output.close()
+	# append this bed output to a summary file of all hpRNA predictions for both strands
 	cmd="cat "+results.replace(".out",".bed")+" >> ./hpSource/premapping.bed"
 	subprocess.call(cmd,shell=True)
 	print("Bed file of hpRNAs written to "+results.replace(".out",".bed")+" and concatenated to ./hpSource/premapping.bed")
@@ -227,6 +234,7 @@ def sRNAmap(srna,genome):
 	cmd="bowtie2 --fast --nofw -q -x ./hpSource/"+genome.replace(".fasta","")+" -U "+srna+" -S ./hpSource/MappedR.sam"
 	subprocess.call(cmd,shell=True)
 	print("Reads mapped")
+	# convert sam to bam, and remove sam
 	print("Converting SAM to BAM")
 	cmd="samtools view -bS -u ./hpSource/MappedR.sam > ./hpSource/MappedR.bam"
 	subprocess.call(cmd,shell=True)
@@ -243,6 +251,7 @@ def CoverageCalculator(bed,bam):
 	print("Coverage written to "+CoverageFile)
 	return(CoverageFile)
 
+# function to screen out annotations based on the proportion of reads mapping to the dominant strand
 def CoverageScreener(forward,reverse):
 	print("Screening hpRNAs based on coverage")
 	InputLines=[]
@@ -251,6 +260,7 @@ def CoverageScreener(forward,reverse):
 	CandidatesR=[]
 	CountsR=[]
 	ValidatedLines=[]
+	# read in names of each hpRNA and coverage on either strand
 	for line in open(forward,"r"):
 		InputLines.append(line.strip("\n"))
 		CandidatesF.append(line.split("\t")[3])
@@ -258,6 +268,7 @@ def CoverageScreener(forward,reverse):
 	for line in open(reverse,"r"):
 		CandidatesR.append(line.split("\t")[3])
 		CountsR.append(int(line.split("\t")[-1]))
+	# work out which strand has higher coverage, calculate what proportion of total coverage this strand accounts for, and retain only those hpRNAs for which this proportion is over 80%
 	for i in range(len(CandidatesF)):
 		if CandidatesF[i]!=CandidatesR[i]:
 			print("ERROR: clash of names when parsing forward and reverse counts")
@@ -273,6 +284,7 @@ def CoverageScreener(forward,reverse):
 			if CoverageProp>0.8:
 				ValidatedLines.append(InputLines[i])
 				print(CandidatesF[i]+" passes validation")
+	# output bed file of coverage-validated hpRNA annotations
 	ValidatedBed=''
 	for i in ValidatedLines:
 		temp=i.split("\t")
