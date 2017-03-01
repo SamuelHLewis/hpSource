@@ -152,10 +152,10 @@ def einvertedParse(results,reversecomp=False):
 				hpCount=1
 		elif linecount==3:
 			temp=line.strip("   ").split(" ")
-			# if parsing the reverse complement, convert the left start and end coordinates back to the forward orientation
+			# if parsing the reverse complement, convert the left start and end coordinates back to the forward orientation (NB: using the "end" coordinate as the start and "start" coordinate as the end for reverse complement)
 			if reversecomp:
-				leftstart=CorrectionFactors[chrom]-int(temp[0])
-				leftend=CorrectionFactors[chrom]-int(temp[2])
+				leftstart=CorrectionFactors[chrom]-int(temp[2])
+				leftend=CorrectionFactors[chrom]-int(temp[0])
 			else:
 				leftstart=int(temp[0])
 				leftend=int(temp[2])
@@ -164,10 +164,10 @@ def einvertedParse(results,reversecomp=False):
 			None
 		elif linecount==5:
 			temp=line.strip("   ").split(" ")	
-			# if parsing the reverse complement, convert the right start and end coordinates back to the forward orientation
+			# if parsing the reverse complement, convert the right start and end coordinates back to the forward orientation (NB: using the "end" coordinate as the start and "start" coordinate as the end for reverse complement)
 			if reversecomp:
-				rightstart=CorrectionFactors[chrom]-int(temp[2])
-				rightend=CorrectionFactors[chrom]-int(temp[0])
+				rightstart=CorrectionFactors[chrom]-int(temp[0])
+				rightend=CorrectionFactors[chrom]-int(temp[2])
 			else:
 				rightstart=int(temp[2])
 				rightend=int(temp[0])
@@ -244,4 +244,5 @@ def hpRNAfind(input):
 
 hpRNAfind(input=InputGenome)
 
+sRNAmap(srna=InputsRNA,genome=InputGenome)
 
