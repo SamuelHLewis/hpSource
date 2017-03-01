@@ -16,12 +16,14 @@ parser.add_argument("-p","--gap",type=int,help="Gap penalty (default=12)")
 parser.add_argument("-t","--threshold",type=int,help="Minimum score threshold (default=50)")
 parser.add_argument("-m","--match",type=int,help="Match score (default=3)")
 parser.add_argument("-a","--mismatch",type=int,help="Mismatch score (default=-4)")
+parser.add_argument("-f","--fractioncoverage",type=str,help="Threshold for fraction of total coverage contributed by dominant strand (default=0.8)")
 args=parser.parse_args()
 # default values
 EinvGap=12
 EinvThreshold=50
 EinvMatch=3
 EinvMismatch=-4
+FractionCoverage=0.8
 # parse input genome file
 if args.inputgenome is not None:
 	InputGenome = args.inputgenome
@@ -75,6 +77,16 @@ else:
 		print("Mismatch score = "+str(EinvMismatch))
 	else:
 		print("ERROR: mismatch score (-s) must be an integer below 0")
+		sys.exit(0)
+# parse fraction of coverage required on dominant strand
+if args.fractioncoverage is None:
+	print("Using default threshold fraction for dominant strand coverage ("+str(FractionCoverage)+")")
+else:
+	if 0.5 < float(args.fractioncoverage) <= 1:
+		FractionCoverage=float(args.fractioncoverage)
+		print("Threshold fraction for dominant strand coverage  = "+str(FractionCoverage))
+	else:
+		print("ERROR: threshold fraction for dominant strand coverage score (-f) must be above 0.5 and below or equal to 1")
 		sys.exit(0)
 
 for i in [".fa",".fas"]:
@@ -268,7 +280,7 @@ def CoverageScreener(forward,reverse):
 	for line in open(reverse,"r"):
 		CandidatesR.append(line.split("\t")[3])
 		CountsR.append(int(line.split("\t")[-1]))
-	# work out which strand has higher coverage, calculate what proportion of total coverage this strand accounts for, and retain only those hpRNAs for which this proportion is over 80%
+	# work out which strand has higher coverage (dominant strand), calculate what proportion of total coverage this strand accounts for, and retain only those hpRNAs for which this proportion is equal to or more than the specified fraction of coverage contributed by the dominant strand FractionCoverage
 	for i in range(len(CandidatesF)):
 		if CandidatesF[i]!=CandidatesR[i]:
 			print("ERROR: clash of names when parsing forward and reverse counts")
@@ -281,7 +293,7 @@ def CoverageScreener(forward,reverse):
 			else:
 				CoverageProp=0.5
 			print("Dominant strand coverage for "+CandidatesF[i]+" = "+str(CoverageProp))
-			if CoverageProp>0.8:
+			if CoverageProp>FractionCoverage:
 				ValidatedLines.append(InputLines[i])
 				print(CandidatesF[i]+" passes validation")
 	# output bed file of coverage-validated hpRNA annotations

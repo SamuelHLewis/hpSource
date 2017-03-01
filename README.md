@@ -14,6 +14,8 @@ Dependencies:
 
 [revseq](http://www.bioinformatics.nl/cgi-bin/emboss/help/revseq)
 
+[bedtools](http://bedtools.readthedocs.io/en/latest/)
+
 Basic usage is:
 ```bash
 hpSource.py -g input.fas -s sRNA.fastq
@@ -24,7 +26,7 @@ hpSource takes two mandatory arguments:
 
 	-s (input small RNA fastq file)
 
-hpSource takes four optional arguments:
+hpSource takes five optional arguments:
 
 	-p (gap penalty for einverted, default=12)
 
@@ -34,3 +36,4 @@ hpSource takes four optional arguments:
 
 	-a (mismatch score for einverted, default=-4)
 
+	-f (threshold value for fraction of coverage contributed by dominant strand)
