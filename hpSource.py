@@ -170,10 +170,12 @@ def einvertedParse(results,reversecomp=False):
 			temp=line.strip("   ").split(" ")
 			# if parsing the reverse complement, convert the left start and end coordinates back to the forward orientation (NB: using the "end" coordinate as the start and "start" coordinate as the end for reverse complement)
 			if reversecomp:
-				leftstart=CorrectionFactors[chrom]-int(temp[2])
+				# -1 from start position to account for BED format 0-based indexing
+				leftstart=CorrectionFactors[chrom]-int(temp[2])-1
 				leftend=CorrectionFactors[chrom]-int(temp[0])
 			else:
-				leftstart=int(temp[0])
+				# -1 from start position to account for BED format 0-based indexing
+				leftstart=int(temp[0])-1
 				leftend=int(temp[2])
 			leftarm=temp[1]
 		elif linecount==4:
@@ -182,10 +184,12 @@ def einvertedParse(results,reversecomp=False):
 			temp=line.strip("   ").split(" ")	
 			# if parsing the reverse complement, convert the right start and end coordinates back to the forward orientation (NB: using the "end" coordinate as the start and "start" coordinate as the end for reverse complement)
 			if reversecomp:
-				rightstart=CorrectionFactors[chrom]-int(temp[0])
+				# -1 from start position to account for BED format 0-based indexing
+				rightstart=CorrectionFactors[chrom]-int(temp[0])-1
 				rightend=CorrectionFactors[chrom]-int(temp[2])
 			else:
-				rightstart=int(temp[2])
+				# -1 from start position to account for BED format 0-based indexing
+				rightstart=int(temp[2])-1
 				rightend=int(temp[0])
 			rightarm=temp[1]
 			# calculate the score for this hpRNA using the custom scorer, which takes into account G:U wobble pairs
