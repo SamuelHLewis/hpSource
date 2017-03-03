@@ -170,9 +170,9 @@ def einvertedParse(results,reversecomp=False):
 			temp=line.strip("   ").split(" ")
 			# if parsing the reverse complement, convert the left start and end coordinates back to the forward orientation (NB: using the "end" coordinate as the start and "start" coordinate as the end for reverse complement)
 			if reversecomp:
-				# -1 from start position to account for BED format 0-based indexing
-				leftstart=CorrectionFactors[chrom]-int(temp[2])-1
-				leftend=CorrectionFactors[chrom]-int(temp[0])
+				leftstart=CorrectionFactors[chrom]-int(temp[2])
+				# +1 to end position to account for BED format 0-based indexing
+				leftend=CorrectionFactors[chrom]-int(temp[0])+1
 			else:
 				# -1 from start position to account for BED format 0-based indexing
 				leftstart=int(temp[0])-1
@@ -184,9 +184,9 @@ def einvertedParse(results,reversecomp=False):
 			temp=line.strip("   ").split(" ")	
 			# if parsing the reverse complement, convert the right start and end coordinates back to the forward orientation (NB: using the "end" coordinate as the start and "start" coordinate as the end for reverse complement)
 			if reversecomp:
-				# -1 from start position to account for BED format 0-based indexing
-				rightstart=CorrectionFactors[chrom]-int(temp[0])-1
-				rightend=CorrectionFactors[chrom]-int(temp[2])
+				rightstart=CorrectionFactors[chrom]-int(temp[0])
+				# +1 to end position to account for BED format 0-based indexing
+				rightend=CorrectionFactors[chrom]-int(temp[2])+1
 			else:
 				# -1 from start position to account for BED format 0-based indexing
 				rightstart=int(temp[2])-1
