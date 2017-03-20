@@ -319,6 +319,12 @@ def CoverageScreener(forward,reverse):
 	print("Coverage-screened hpRNA annotations written to ./hpSource/postmapping.bed")
 	return()
 
+# function to merge neighbouring hpRNA annotations into one annotation (for RNAfold)
+def NeighbourMerger(bedfile,distance=100):
+	print("Merging neighbouring hpRNA annotations within "+str(distance)+" bases of each other in file "+bedfile)
+	cmd = "bedtools merge -i "+bedfile+" -s -d "+str(distance)+" -c 1,4 -o count,collapse > ./hpSource/merged.bed"
+	subprocess.call(cmd,shell=True)
+
 # master function to find hpRNAs
 def hpRNAfind(input):
 	if os.path.isdir("hpSource") is True:
@@ -334,6 +340,7 @@ def hpRNAfind(input):
 	Fcounts=CoverageCalculator(bed="./hpSource/premapping.bed",bam="./hpSource/MappedF.bam")
 	Rcounts=CoverageCalculator(bed="./hpSource/premapping.bed",bam="./hpSource/MappedR.bam")
 	CoverageScreener(forward=Fcounts,reverse=Rcounts)
+	NeighbourMerger(bedfile="./hpSource/postmapping.bed")
 	return("hpRNA analysis complete for "+input)
 
 hpRNAfind(input=InputGenome)
