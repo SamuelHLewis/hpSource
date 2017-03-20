@@ -332,7 +332,7 @@ def RNAfolder(genome,bedfile):
 	print("Extracting fasta sequences from "+genome+" and "+bedfile)
 	cmd="bedtools getfasta -s -fi "+genome+" -bed "+bedfile+" -fo ./hpSource/RNAfold/merged.fasta"
 	subprocess.call(cmd,shell=True)
-	cmd="RNAfold -i ./hpSource/RNAfold/merged.fasta -o ./hpSource/RNAfold/merged"
+	cmd="RNAfold -i ./hpSource/RNAfold/merged.fasta -o ./hpSource/RNAfold/"
 	subprocess.call(cmd,shell=True)
 	return()
 

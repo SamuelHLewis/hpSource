@@ -16,6 +16,8 @@ Dependencies:
 
 [bedtools](http://bedtools.readthedocs.io/en/latest/)
 
+RNAfold from the [ViennaRNA](https://www.tbi.univie.ac.at/RNA/#download) package
+
 Basic usage is:
 ```bash
 hpSource.py -g input.fas -s sRNA.fastq
