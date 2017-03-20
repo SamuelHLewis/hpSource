@@ -218,8 +218,12 @@ def einvertedParse(results,reversecomp=False):
 	output.write(BedOutput)
 	output.close()
 	# append this bed output to a summary file of all hpRNA predictions for both strands
-	cmd="cat "+results.replace(".out",".bed")+" >> ./hpSource/premapping.bed"
+	cmd="cat "+results.replace(".out",".bed")+" >> ./hpSource/premapping_unsorted.bed"
 	subprocess.call(cmd,shell=True)
+	# sort the bed file and remove the unsorted bedfile
+	cmd = "bedtools sort -i ./hpSource/premapping_unsorted.bed > ./hpSource/premapping.bed"
+	subprocess.call(cmd,shell=True)
+	os.remove("./hpSource/premapping_unsorted.bed")
 	print("Bed file of hpRNAs written to "+results.replace(".out",".bed")+" and concatenated to ./hpSource/premapping.bed")
 	return()
 
@@ -305,9 +309,13 @@ def CoverageScreener(forward,reverse):
 	for i in ValidatedLines:
 		temp=i.split("\t")
 		ValidatedBed+=temp[0]+"\t"+temp[1]+"\t"+temp[2]+"\t"+temp[3]+"\t"+temp[4]+"\t"+temp[5]+"\n"
-	output=open("./hpSource/postmapping.bed","wt")
+	output=open("./hpSource/postmapping_unsorted.bed","wt")
 	output.write(ValidatedBed)
 	output.close()
+	# sort the bed file and remove the unsorted bedfile
+	cmd = "bedtools sort -i ./hpSource/postmapping_unsorted.bed > ./hpSource/postmapping.bed"
+	subprocess.call(cmd,shell=True)
+	os.remove("./hpSource/postmapping_unsorted.bed")
 	print("Coverage-screened hpRNA annotations written to ./hpSource/postmapping.bed")
 	return()
 
@@ -329,5 +337,6 @@ def hpRNAfind(input):
 	return("hpRNA analysis complete for "+input)
 
 hpRNAfind(input=InputGenome)
+
 
 
