@@ -324,6 +324,17 @@ def NeighbourMerger(bedfile,distance=100):
 	print("Merging neighbouring hpRNA annotations within "+str(distance)+" bases of each other in file "+bedfile)
 	cmd = "bedtools merge -i "+bedfile+" -s -d "+str(distance)+" -c 1,4 -o count,collapse > ./hpSource/merged.bed"
 	subprocess.call(cmd,shell=True)
+	return()
+
+# function to run RNAfold on a bedfile
+def RNAfolder(genome,bedfile):
+	os.mkdir("./hpSource/RNAfold/")
+	print("Extracting fasta sequences from "+genome+" and "+bedfile)
+	cmd="bedtools getfasta -s -fi "+genome+" -bed "+bedfile+" -fo ./hpSource/RNAfold/merged.fasta"
+	subprocess.call(cmd,shell=True)
+	cmd="RNAfold -i ./hpSource/RNAfold/merged.fasta -o ./hpSource/RNAfold/merged"
+	subprocess.call(cmd,shell=True)
+	return()
 
 # master function to find hpRNAs
 def hpRNAfind(input):
@@ -341,6 +352,7 @@ def hpRNAfind(input):
 	Rcounts=CoverageCalculator(bed="./hpSource/premapping.bed",bam="./hpSource/MappedR.bam")
 	CoverageScreener(forward=Fcounts,reverse=Rcounts)
 	NeighbourMerger(bedfile="./hpSource/postmapping.bed")
+	RNAfolder(genome=input,bedfile="./hpSource/merged.bed")
 	return("hpRNA analysis complete for "+input)
 
 hpRNAfind(input=InputGenome)
