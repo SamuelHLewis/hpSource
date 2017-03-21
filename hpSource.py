@@ -322,8 +322,12 @@ def CoverageScreener(forward,reverse):
 # function to merge neighbouring hpRNA annotations into one annotation (for RNAfold)
 def NeighbourMerger(bedfile,distance=100):
 	print("Merging neighbouring hpRNA annotations within "+str(distance)+" bases of each other in file "+bedfile)
-	cmd = "bedtools merge -i "+bedfile+" -s -d "+str(distance)+" -c 1,4 -o count,collapse > ./hpSource/merged.bed"
+	cmd = "bedtools merge -i "+bedfile+" -s -d "+str(distance)+" -c 4,1 -o collapse,count > ./hpSource/merged_wrongorder.bed"
 	subprocess.call(cmd,shell=True)
+	# the initial ouput of merge is in the wrong order for parsing by genome viewers, so rearrange the columns to put the strand at the end
+	cmd="awk \'BEGIN {FS=OFS=\"\t\"} {print $1,$2,$3,$5,$6,$4}\' ./hpSource/merged_wrongorder.bed | sed s/\"\,\"/\"_\"/ > ./hpSource/merged.bed"
+	subprocess.call(cmd,shell=True)
+	os.remove("./hpSource/merged_wrongorder.bed")
 	return()
 
 # function to run RNAfold on a bedfile
