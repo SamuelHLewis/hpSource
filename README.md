@@ -28,7 +28,9 @@ hpSource takes two mandatory arguments:
 
 	-s (input small RNA fastq file)
 
-hpSource takes five optional arguments:
+hpSource takes seven optional arguments:
+
+	-c (number of cores to use, default=1)
 
 	-p (gap penalty for einverted, default=12)
 
@@ -39,3 +41,5 @@ hpSource takes five optional arguments:
 	-a (mismatch score for einverted, default=-4)
 
 	-f (threshold value for fraction of coverage contributed by dominant strand)
+
+	-d (maximum distance (in bases) between hpRNA annotations which will be merged for RNAfold structure analysis, default=1000)
