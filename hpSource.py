@@ -12,6 +12,7 @@ from Bio import SeqIO
 parser=argparse.ArgumentParser(description="Read arguments")
 parser.add_argument("-g","--inputgenome",type=str,help="Input genome file")
 parser.add_argument("-s","--inputsrna",type=str,help="Input sRNA read file")
+parser.add_argument("-c","--cores",type=int,help="Number of cores (default=1)")
 parser.add_argument("-p","--gap",type=int,help="Gap penalty (default=12)")
 parser.add_argument("-t","--threshold",type=int,help="Minimum score threshold (default=50)")
 parser.add_argument("-m","--match",type=int,help="Match score (default=3)")
@@ -20,6 +21,7 @@ parser.add_argument("-f","--fractioncoverage",type=str,help="Threshold for fract
 parser.add_argument("-d","--distance",type=int,help="Maximum distance (in bases) between hpRNA annotations to be merged into one RNA structure (default=1000")
 args=parser.parse_args()
 # default values
+Cores=1
 EinvGap=12
 EinvThreshold=50
 EinvMatch=3
@@ -40,6 +42,16 @@ if args.inputsrna is not None:
 else:
 	print("ERROR: input sRNA file (-s) not specified")
 	sys.exit(0)
+# parse cores
+if args.cores is None:
+	print("Using default cores ("+str(Cores)+")")
+else:
+	if args.cores >= 1:
+		Cores=int(args.cores)
+		print("Cores = "+str(Cores))
+	else:
+		print("ERROR: cores (-c) must be an integer of 1 or more")
+		sys.exit(0)
 # parse gap penalty
 if args.gap is None:
 	print("Using default gap penalty ("+str(EinvGap)+")")
@@ -240,7 +252,7 @@ def einvertedParse(results,reversecomp=False):
 	return()
 
 # function to map sRNAs to a genome
-def sRNAmap(srna,genome):
+def sRNAmap(srna,genome,cores):
 	if srna.endswith(".gz"):
 		print("Input file "+srna+" is compressed - uncompressing...")
 		cmd="gunzip "+srna
@@ -253,7 +265,7 @@ def sRNAmap(srna,genome):
 	subprocess.call(cmd,shell=True)
 	# map reads to forward strand
 	print("Mapping "+srna+" to forward strand of "+genome)
-	cmd="bowtie2 --fast --norc -q -x ./hpSource/"+genome.replace(".fasta","")+" -U "+srna+" -S ./hpSource/MappedF.sam"
+	cmd="bowtie2 --fast --norc -c "+str(cores)+" -q -x ./hpSource/"+genome.replace(".fasta","")+" -U "+srna+" -S ./hpSource/MappedF.sam"
 	subprocess.call(cmd,shell=True)
 	print("Reads mapped")
 	print("Converting SAM to BAM")
@@ -263,7 +275,7 @@ def sRNAmap(srna,genome):
 	os.remove("./hpSource/MappedF.sam")
 	# map reads to reverse strand
 	print("Mapping "+srna+" to reverse strand of "+genome)
-	cmd="bowtie2 --fast --nofw -q -x ./hpSource/"+genome.replace(".fasta","")+" -U "+srna+" -S ./hpSource/MappedR.sam"
+	cmd="bowtie2 --fast --nofw -c "+str(cores)+" -q -x ./hpSource/"+genome.replace(".fasta","")+" -U "+srna+" -S ./hpSource/MappedR.sam"
 	subprocess.call(cmd,shell=True)
 	print("Reads mapped")
 	# convert sam to bam, and remove sam
@@ -363,7 +375,7 @@ def hpRNAfind(input):
 	einvertedParse(results=einvertedResults)
 	einvertedResultsRC=einvertedRun(genome=inputRC)
 	einvertedParse(results=einvertedResultsRC,reversecomp=True)
-	sRNAmap(srna=InputsRNA,genome=InputGenome)
+	sRNAmap(srna=InputsRNA,genome=InputGenome,cores=Cores)
 	Fcounts=CoverageCalculator(bed="./hpSource/premapping.bed",bam="./hpSource/MappedF.bam")
 	Rcounts=CoverageCalculator(bed="./hpSource/premapping.bed",bam="./hpSource/MappedR.bam")
 	CoverageScreener(forward=Fcounts,reverse=Rcounts)
