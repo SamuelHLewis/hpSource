@@ -17,6 +17,7 @@ parser.add_argument("-t","--threshold",type=int,help="Minimum score threshold (d
 parser.add_argument("-m","--match",type=int,help="Match score (default=3)")
 parser.add_argument("-a","--mismatch",type=int,help="Mismatch score (default=-4)")
 parser.add_argument("-f","--fractioncoverage",type=str,help="Threshold for fraction of total coverage contributed by dominant strand (default=0.8)")
+parser.add_argument("-d","--distance",type=int,help="Maximum distance (in bases) between hpRNA annotations to be merged into one RNA structure (default=1000")
 args=parser.parse_args()
 # default values
 EinvGap=12
@@ -24,6 +25,7 @@ EinvThreshold=50
 EinvMatch=3
 EinvMismatch=-4
 FractionCoverage=0.8
+Distance=1000
 # parse input genome file
 if args.inputgenome is not None:
 	InputGenome = args.inputgenome
@@ -93,6 +95,16 @@ for i in [".fa",".fas"]:
 	if InputGenome.endswith(i):
 		os.rename(InputGenome,InputGenome.replace(i,".fasta"))
 		InputGenome=InputGenome.replace(i,".fasta")
+# parse distance between hpRNA predictions
+if args.distance is None:
+	print("Using default distance ("+str(Distance)+")")
+else:
+	if args.distance >= 0:
+		Distance=int(args.distance)
+		print("Distance = "+str(Distance)+" bases")
+	else:
+		print("ERROR: distance (-d) must be an integer of 0 or more")
+		sys.exit(0)
 
 # function to run revseq (to complement genome, to find antisense hpRNA)
 def revseqRun(genome):
@@ -355,7 +367,7 @@ def hpRNAfind(input):
 	Fcounts=CoverageCalculator(bed="./hpSource/premapping.bed",bam="./hpSource/MappedF.bam")
 	Rcounts=CoverageCalculator(bed="./hpSource/premapping.bed",bam="./hpSource/MappedR.bam")
 	CoverageScreener(forward=Fcounts,reverse=Rcounts)
-	NeighbourMerger(bedfile="./hpSource/postmapping.bed")
+	NeighbourMerger(bedfile="./hpSource/postmapping.bed",distance=Distance)
 	RNAfolder(genome=input,bedfile="./hpSource/merged.bed")
 	return("hpRNA analysis complete for "+input)
 
