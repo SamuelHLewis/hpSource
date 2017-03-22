@@ -265,7 +265,7 @@ def sRNAmap(srna,genome,cores):
 	subprocess.call(cmd,shell=True)
 	# map reads to forward strand
 	print("Mapping "+srna+" to forward strand of "+genome)
-	cmd="bowtie2 --fast --norc -c "+str(cores)+" -q -x ./hpSource/"+genome.replace(".fasta","")+" -U "+srna+" -S ./hpSource/MappedF.sam"
+	cmd="bowtie2 --fast --norc -p "+str(cores)+" -q -x ./hpSource/"+genome.replace(".fasta","")+" -U "+srna+" -S ./hpSource/MappedF.sam"
 	subprocess.call(cmd,shell=True)
 	print("Reads mapped")
 	print("Converting SAM to BAM")
@@ -275,7 +275,7 @@ def sRNAmap(srna,genome,cores):
 	os.remove("./hpSource/MappedF.sam")
 	# map reads to reverse strand
 	print("Mapping "+srna+" to reverse strand of "+genome)
-	cmd="bowtie2 --fast --nofw -c "+str(cores)+" -q -x ./hpSource/"+genome.replace(".fasta","")+" -U "+srna+" -S ./hpSource/MappedR.sam"
+	cmd="bowtie2 --fast --nofw -p "+str(cores)+" -q -x ./hpSource/"+genome.replace(".fasta","")+" -U "+srna+" -S ./hpSource/MappedR.sam"
 	subprocess.call(cmd,shell=True)
 	print("Reads mapped")
 	# convert sam to bam, and remove sam
